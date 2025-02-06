@@ -1,5 +1,4 @@
 name: Deploy Dist
-# on: [push,workflow_dispatch]
 on:
     push:
         branches:
@@ -9,19 +8,12 @@ on:
             - '.github/workflows/*'
             - README.md
     workflow_dispatch:
-#on:
-#     - push
-#     - workflow_dispatch
 
 jobs:
     test:
         runs-on: ubuntu-latest
         steps:
             - name: Get Code
-            #   run: |
-            #     echo "Cloning Repo.."
-            #     echo "${{toJson(github)}}"
-            #     git clone https://github.com/${{github.repository}}.git
               uses: actions/checkout@v4
             - name: Install Node Js
               uses: actions/setup-node@v4
@@ -60,24 +52,29 @@ jobs:
             - name: Build Project
               run: npm run build
             - name: upload Dist Artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-pages-artifact@v3
               with:
                 name: dist-files
                 path: dist
-
-              
-
     deploy:
         needs: build
-        runs-on: ubuntu-latest     
+        runs-on: ubuntu-latest   
+        permissions:
+            pages: write      # to deploy to Pages
+            id-token: write   # to verify the deployment originates from an appropriate source
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
         steps:
             - name: Download Dist Artifact
               uses: actions/download-artifact@v4
               with:
-               name: dist-files
-               path: dist
+                name: dist-files
+                path: dist
             - name: Deploy
               run: echo "Build Successful"
-        
-
-              
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4 # or specific "vX.X.X" version tag for this action
+              with:
+                token: ${{ secrets.GITHUB_TOKEN }}
